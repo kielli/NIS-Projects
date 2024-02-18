@@ -1,2 +1,2 @@
 # NIS-Projects
-A compilation of tools I made for my cybersecurity major.
+A compilation of projects I made for my cybersecurity majors :>

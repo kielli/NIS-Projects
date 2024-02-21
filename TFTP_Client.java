@@ -17,8 +17,6 @@ public class TFTP_Client {
     public static byte[] ack_opcode = {0, 4};
     public static byte[] error_opcode = {0, 5};
 
-
-
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
 

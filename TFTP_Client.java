@@ -35,8 +35,12 @@ public class TFTP_Client {
                     if (!isConnected) {
                         try {
                             server_ip = InetAddress.getByName(input[1]);
+                            System.out.println("Trying to connect to "+server_ip);
                             if (server_ip.isReachable(5000)) {
-                                System.out.println("The IP address you inputted is not responding");
+                                System.out.println("Connected to the IP Address!");
+                            }
+                            else {
+                                System.out.println("Unable to connect to that address");
                             }
 
                             client_socket = new DatagramSocket(tftp_port);
@@ -77,7 +81,6 @@ public class TFTP_Client {
 
                             DatagramPacket RRQ = new DatagramPacket(req_output.toByteArray(), req_output.toByteArray().length, server_ip, tftp_port);
                             client_socket.send(RRQ);
-
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
@@ -140,7 +143,42 @@ public class TFTP_Client {
                 }
 
                 else if(input[0].equals("/write") && input[1]!=null){
+                    if(isConnected){
+                        int len = wrq_opcode.length+input[1].length()+"octet".length()+2;
+                        ByteArrayOutputStream req_output = new ByteArrayOutputStream(len);
+                        buffer = new byte[516];
 
+                        try{
+                            req_output.write(wrq_opcode);
+                            req_output.write(input[1].getBytes());
+                            req_output.write(0);
+                            req_output.write("octet".getBytes());
+                            req_output.write(0);
+
+                            DatagramPacket RRQ = new DatagramPacket(req_output.toByteArray(), req_output.toByteArray().length, server_ip, tftp_port);
+                            client_socket.send(RRQ);
+
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        while(true){
+                            try{
+                                DatagramPacket WRQ_Message = new DatagramPacket(buffer, buffer.length);
+                                client_socket.receive(WRQ_Message);
+                                byte[] received_data = WRQ_Message.getData();
+
+                                if(received_data[1] == 5){
+
+                                }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+
+                        }
+                    }
                 }
                 else if(input[0].equals("/?")){
                     System.out.println("Help:\n"+

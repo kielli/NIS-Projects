@@ -86,7 +86,7 @@ public class TFTP_Client {
                         boolean recv_message=true;
                         while(true){
                             try {
-                                DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length);
+                                DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length,server_ip,tftp_port);
                                 client_socket.receive(RRQ_Response);
 
                                 byte[] received_packet = RRQ_Response.getData();
@@ -119,7 +119,7 @@ public class TFTP_Client {
                                     ack_output.write(ack_opcode);
                                     ack_output.write(blk_num);
 
-                                    DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length);
+                                    DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length, server_ip, tftp_port);
                                     client_socket.send(ack_packet);
 
                                     if(received_packet.length < 512){

@@ -40,7 +40,7 @@ public class TFTP_Client {
                                 System.out.println("Unable to connect to that address");
                             }
 
-                            client_socket = new DatagramSocket(tftp_port);
+                            client_socket = new DatagramSocket();
                             isConnected = true;
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -113,7 +113,7 @@ public class TFTP_Client {
                                     DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length, server_ip, tftp_port);
                                     client_socket.send(ack_packet);
 
-                                    if(received_packet.length < 512){
+                                    if(received_packet.length < 516){
                                         System.out.println("File Transfer Done !");
                                     }
 

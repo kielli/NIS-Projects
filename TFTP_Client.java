@@ -1,4 +1,5 @@
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.*;
 import java.util.Arrays;
@@ -13,9 +14,7 @@ public class TFTP_Client {
     public static boolean isConnected = false;
     public static byte[] rrq_opcode = {0, 1};
     public static byte[] wrq_opcode = {0, 2};
-    public static byte[] data_opcode = {0, 3};
     public static byte[] ack_opcode = {0, 4};
-    public static byte[] error_opcode = {0, 5};
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
@@ -93,16 +92,8 @@ public class TFTP_Client {
                                 int rcvd_opcode = ((received_packet[0] & 0xff) << 8) | (received_packet[1] & 0xff);
 
                                 if(rcvd_opcode == 5){
-                                    int i,j=0;
-                                    byte[] error_code = new byte[received_packet.length-5];
-                                    ByteArrayOutputStream error_output = new ByteArrayOutputStream();
-                                    for(i=4; i<received_packet.length-1; i++, j++){
-                                        error_code[j] = received_packet[i];
-                                    }
-                                    error_output.write(error_code);
-                                    System.out.println(error_output.toString());
-
-                                    break;
+                                    String error_msg = new String(received_packet, 4, received_packet.length-4);
+                                    System.out.println("Error: "+error_msg);
                                 }
 
                                 if(rcvd_opcode == 3){
@@ -145,7 +136,7 @@ public class TFTP_Client {
                     if(isConnected){
                         int len = wrq_opcode.length+input[1].length()+"octet".length()+2;
                         ByteArrayOutputStream req_output = new ByteArrayOutputStream(len);
-                        buffer = new byte[516];
+                        buffer = new byte[512];
 
                         try{
                             req_output.write(wrq_opcode);
@@ -157,6 +148,29 @@ public class TFTP_Client {
                             DatagramPacket RRQ = new DatagramPacket(req_output.toByteArray(), req_output.toByteArray().length, server_ip, tftp_port);
                             client_socket.send(RRQ);
 
+                        } catch(Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        try{
+                            FileInputStream file_reader = new FileInputStream(input[1]);
+                            int file_len;
+                            int blk_num =1;
+
+                            while((file_len = file_reader.read(buffer))!=-1){
+                                ByteArrayOutputStream file_output = new ByteArrayOutputStream();
+                                file_output.write(wrq_opcode);
+                                file_output.write(blk_num++);
+                                file_output.write(buffer, 0, file_len);
+
+                                DatagramPacket file_packet = new DatagramPacket(file_output.toByteArray(), file_output.toByteArray().length, server_ip, tftp_port);
+                                client_socket.send(file_packet);
+
+                                byte[] ack_data = new byte[4];
+                                DatagramPacket ack_packet = new DatagramPacket(ack_data, ack_data.length, server_ip, tftp_port);
+                                client_socket.receive(ack_packet);
+
+                            }
                         } catch(Exception e) {
                             e.printStackTrace();
                         }

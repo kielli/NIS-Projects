@@ -83,52 +83,53 @@ public class TFTP_Client {
                             e.printStackTrace();
                         }
 
+                        boolean recv_message=true;
                         while(true){
                             try {
                                 DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length);
                                 client_socket.receive(RRQ_Response);
 
                                 byte[] received_packet = RRQ_Response.getData();
-                                byte[] rcvd_opcode = Arrays.copyOfRange(received_packet, 0, 2);
+                                int rcvd_opcode = ((received_packet[0] & 0xff) << 8) | (received_packet[1] & 0xff);
 
-                                if(rcvd_opcode == error_opcode){
-                                    int i;
-                                    for(i=4; i<received_packet.length-1; i++){
-                                        System.out.println(received_packet[i]);
+                                if(rcvd_opcode == 5){
+                                    int i,j=0;
+                                    byte[] error_code = new byte[received_packet.length-5];
+                                    ByteArrayOutputStream error_output = new ByteArrayOutputStream();
+                                    for(i=4; i<received_packet.length-1; i++, j++){
+                                        error_code[j] = received_packet[i];
                                     }
+                                    error_output.write(error_code);
+                                    System.out.println(error_output.toString());
+
                                     break;
                                 }
 
-                                else if(rcvd_opcode == data_opcode && received_packet.length < 516){
-                                    int i, j=0;
+                                if(rcvd_opcode == 3){
+                                    if(recv_message){
+                                        System.out.println("Transfering file...");
+                                        recv_message=false;
+                                    }
+
+                                    int blk_num = ((received_packet[2] & 0xff) << 8) | (received_packet[3] & 0xff);
                                     FileOutputStream foutputstream = new FileOutputStream(input[1]);
-                                    byte[] received_data = new byte[512];
+                                    foutputstream.write(received_packet, 4, received_packet.length-4);
 
-                                    for(i=4; i<received_packet.length; i++, j++){
-                                        received_data[j] = received_packet[i];
-                                    }
-
-                                    foutputstream.write(received_data);
-                                    foutputstream.close();
-
-                                    byte[] blk_num = {received_data[2], received_data[3]};
-                                    len = ack_opcode.length + blk_num.length;
-                                    ByteArrayOutputStream ack_output = new ByteArrayOutputStream(len);
-
-                                    try{
-                                        ack_output.write(ack_opcode);
-                                        ack_output.write(blk_num);
-                                    } catch(Exception e) {
-                                        e.printStackTrace();
-                                    }
+                                    ByteArrayOutputStream ack_output = new ByteArrayOutputStream();
+                                    ack_output.write(ack_opcode);
+                                    ack_output.write(blk_num);
 
                                     DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length);
                                     client_socket.send(ack_packet);
 
-                                    System.out.println("File Transfer Done !");
+                                    if(received_packet.length < 512){
+                                        System.out.println("File Transfer Done !");
+                                    }
 
                                     break;
                                 }
+
+
 
                             } catch(Exception e) {
                                 e.printStackTrace();
@@ -159,23 +160,6 @@ public class TFTP_Client {
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
-
-                        while(true){
-                            try{
-                                DatagramPacket WRQ_Message = new DatagramPacket(buffer, buffer.length);
-                                client_socket.receive(WRQ_Message);
-                                byte[] received_data = WRQ_Message.getData();
-
-                                if(received_data[1] == 5){
-
-                                }
-
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-
-
-                        }
                     }
                 }
                 else if(input[0].equals("/?")){
@@ -188,7 +172,5 @@ public class TFTP_Client {
                 }
             }
         }
-
     }
-
 }

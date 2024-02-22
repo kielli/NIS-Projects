@@ -76,8 +76,7 @@ public class TFTP_Client {
 
                         try{
                             System.out.println("Fetching file...");
-                            req_output.write(0);
-                            req_output.write(1);
+                            req_output.write(rrq_opcode);
                             req_output.write(input[1].getBytes());
                             req_output.write(0);
                             req_output.write("octet".getBytes());
@@ -98,6 +97,7 @@ public class TFTP_Client {
 
 
                                 byte[] received_packet = RRQ_Response.getData();
+                                System.out.println(received_packet[1]);
                                 int rcvd_opcode = ((received_packet[0] & 0xff) << 8) | (received_packet[1] & 0xff);
 
                                 if(rcvd_opcode == 5){
@@ -179,8 +179,7 @@ public class TFTP_Client {
                         buffer = new byte[512];
 
                         try{
-                            req_output.write(0);
-                            req_output.write(2);
+                            req_output.write(wrq_opcode);
                             req_output.write(input[1].getBytes());
                             req_output.write(0);
                             req_output.write("octet".getBytes());

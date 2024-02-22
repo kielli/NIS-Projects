@@ -91,13 +91,12 @@ public class TFTP_Client {
                         boolean recv_message=true;
                         while(true){
                             try {
-                                DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length,server_ip,tftp_port);
+                                DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length,server_ip, client_socket.getLocalPort());
                                 client_socket.setSoTimeout(5000);
                                 client_socket.receive(RRQ_Response);
 
 
                                 byte[] received_packet = RRQ_Response.getData();
-                                System.out.println(received_packet[1]);
                                 int rcvd_opcode = ((received_packet[0] & 0xff) << 8) | (received_packet[1] & 0xff);
 
                                 if(rcvd_opcode == 5){
@@ -120,7 +119,7 @@ public class TFTP_Client {
                                         recv_message=false;
                                     }
 
-                                    ByteArrayOutputStream req_packets = new ByteArrayOutputStream(received_packet.length-4);
+                                    ByteArrayOutputStream req_packets = new ByteArrayOutputStream(buffer.length);
                                     req_packets.write(received_packet, 4, received_packet.length-4);
 
                                     if(received_packet.length < 516){
@@ -141,17 +140,18 @@ public class TFTP_Client {
 
                                         System.out.println("File Transfer Done !");
                                     }
+                                    else{
+                                        int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
 
-                                    int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
+                                        byte[] ack = new byte[4];
+                                        ack[0] = 0;
+                                        ack[1] = 4;
+                                        ack[2] = (byte) ((blk_num >> 8) & 0xFF);
+                                        ack[3] = (byte) (blk_num & 0xFF);
 
-                                    byte[] ack = new byte[4];
-                                    ack[0] = 0;
-                                    ack[1] = 4;
-                                    ack[2] = (byte) ((blk_num >> 8) & 0xFF);
-                                    ack[3] = (byte) (blk_num & 0xFF);
-
-                                    DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
-                                    client_socket.send(ack_packet);
+                                        DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
+                                        client_socket.send(ack_packet);
+                                    }
 
                                     break;
                                 }

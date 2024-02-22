@@ -100,8 +100,17 @@ public class TFTP_Client {
                                 int rcvd_opcode = ((received_packet[0] & 0xff) << 8) | (received_packet[1] & 0xff);
 
                                 if(rcvd_opcode == 5){
-                                    String error_msg = new String(received_packet, 4, received_packet.length-4);
-                                    System.out.println("Error: "+error_msg);
+                                    int i, j=0;
+
+                                    for(i=4; i<received_packet.length; i++, j++){
+                                        if(received_packet[i]!=0){
+                                            System.out.println(received_packet[i]);
+                                        }
+                                        else{
+                                            break;
+                                        }
+                                    }
+                                    break;
                                 }
 
                                 if(rcvd_opcode == 3){
@@ -166,35 +175,37 @@ public class TFTP_Client {
                             req_output.write("octet".getBytes());
                             req_output.write(0);
 
-                            DatagramPacket RRQ = new DatagramPacket(req_output.toByteArray(), req_output.toByteArray().length, server_ip, tftp_port);
-                            client_socket.send(RRQ);
+                            DatagramPacket WRQ = new DatagramPacket(req_output.toByteArray(), req_output.toByteArray().length, server_ip, tftp_port);
+                            client_socket.send(WRQ);
 
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
-
                         try{
                             FileInputStream file_reader = new FileInputStream(input[1]);
                             int file_len;
-                            int blk_num =1;
+                            int blk_num = 1;
 
                             while((file_len = file_reader.read(buffer))!=-1){
-                                ByteArrayOutputStream file_output = new ByteArrayOutputStream();
+                                ByteArrayOutputStream file_output = new ByteArrayOutputStream(file_len+4);
                                 file_output.write(wrq_opcode);
                                 file_output.write(blk_num++);
                                 file_output.write(buffer, 0, file_len);
 
                                 DatagramPacket file_packet = new DatagramPacket(file_output.toByteArray(), file_output.toByteArray().length, server_ip, tftp_port);
                                 client_socket.send(file_packet);
+                                System.out.println("Sending File...");
 
                                 byte[] ack_data = new byte[4];
                                 DatagramPacket ack_packet = new DatagramPacket(ack_data, ack_data.length, server_ip, tftp_port);
                                 client_socket.receive(ack_packet);
+                                System.out.println("File Sent!");
 
                             }
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
+
                     }
                 }
                 else if(input[0].equals("/?")){

@@ -128,24 +128,31 @@ public class TFTP_Client {
                                         foutputstream.write(req_packets.toByteArray());
                                         foutputstream.close();
 
-                                        byte[] blk_num = {received_packet[2],received_packet[3]};
-                                        ByteArrayOutputStream ack_output = new ByteArrayOutputStream(ack_opcode.length+ blk_num.length);
-                                        ack_output.write(ack_opcode);
-                                        ack_output.write(blk_num);
+                                        int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
 
-                                        DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length, server_ip, tftp_port);
+                                        byte[] ack = new byte[4];
+                                        ack[0] = 0;
+                                        ack[1] = 4;
+                                        ack[2] = (byte) ((blk_num >> 8) & 0xFF);
+                                        ack[3] = (byte) (blk_num & 0xFF);
+
+                                        DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
                                         client_socket.send(ack_packet);
 
                                         System.out.println("File Transfer Done !");
                                     }
 
-                                    byte[] blk_num = {received_packet[2],received_packet[3]};
-                                    ByteArrayOutputStream ack_output = new ByteArrayOutputStream(ack_opcode.length+ blk_num.length);
-                                    ack_output.write(ack_opcode);
-                                    ack_output.write(blk_num);
+                                    int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
 
-                                    DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length, server_ip, tftp_port);
+                                    byte[] ack = new byte[4];
+                                    ack[0] = 0;
+                                    ack[1] = 4;
+                                    ack[2] = (byte) ((blk_num >> 8) & 0xFF);
+                                    ack[3] = (byte) (blk_num & 0xFF);
+
+                                    DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
                                     client_socket.send(ack_packet);
+
                                     break;
                                 }
 

@@ -92,7 +92,7 @@ public class TFTP_Client {
                         while(true){
                             try {
                                 DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length,server_ip,tftp_port);
-                                client_socket.setSoTimeout(15000);
+                                client_socket.setSoTimeout(10000);
                                 client_socket.receive(RRQ_Response);
 
 

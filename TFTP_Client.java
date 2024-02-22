@@ -76,7 +76,8 @@ public class TFTP_Client {
 
                         try{
                             System.out.println("Fetching file...");
-                            req_output.write(rrq_opcode);
+                            req_output.write(0);
+                            req_output.write(1);
                             req_output.write(input[1].getBytes());
                             req_output.write(0);
                             req_output.write("octet".getBytes());
@@ -126,6 +127,15 @@ public class TFTP_Client {
                                         FileOutputStream foutputstream = new FileOutputStream(input[1]);
                                         foutputstream.write(req_packets.toByteArray());
                                         foutputstream.close();
+
+                                        byte[] blk_num = {received_packet[2],received_packet[3]};
+                                        ByteArrayOutputStream ack_output = new ByteArrayOutputStream(ack_opcode.length+ blk_num.length);
+                                        ack_output.write(ack_opcode);
+                                        ack_output.write(blk_num);
+
+                                        DatagramPacket ack_packet = new DatagramPacket(ack_output.toByteArray(), ack_output.toByteArray().length, server_ip, tftp_port);
+                                        client_socket.send(ack_packet);
+
                                         System.out.println("File Transfer Done !");
                                     }
 
@@ -169,7 +179,8 @@ public class TFTP_Client {
                         buffer = new byte[512];
 
                         try{
-                            req_output.write(wrq_opcode);
+                            req_output.write(0);
+                            req_output.write(2);
                             req_output.write(input[1].getBytes());
                             req_output.write(0);
                             req_output.write("octet".getBytes());

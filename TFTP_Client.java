@@ -89,7 +89,8 @@ public class TFTP_Client {
                         }
 
                         boolean recv_message=true;
-                        while(true){
+                        boolean transfer_done=false;
+                        while(!transfer_done){
                             try {
                                 DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length,server_ip, client_socket.getLocalPort());
                                 client_socket.setSoTimeout(5000);
@@ -139,6 +140,7 @@ public class TFTP_Client {
                                         client_socket.send(ack_packet);
 
                                         System.out.println("File Transfer Done !");
+                                        transfer_done=true;
                                         break;
                                     }
                                     else{

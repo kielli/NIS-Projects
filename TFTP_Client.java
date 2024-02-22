@@ -14,7 +14,6 @@ public class TFTP_Client {
     public static boolean isConnected = false;
     public static byte[] rrq_opcode = {0, 1};
     public static byte[] wrq_opcode = {0, 2};
-    public static byte[] ack_opcode = {0, 4};
     public static final int MAX_RETRIES = 5;
 
     public static void main(String[] args) {
@@ -65,7 +64,7 @@ public class TFTP_Client {
 
                 }
 
-                else if(input[0].equals("/read") && input[1]!=null){
+                else if(input[0].equals("/read") && input[1]!=null && input[2]!=null){
                     if(isConnected){
                         int len = rrq_opcode.length+input[1].length()+"octet".length()+2;
                         ByteArrayOutputStream req_output = new ByteArrayOutputStream(len);
@@ -124,32 +123,21 @@ public class TFTP_Client {
 
                                     ByteArrayOutputStream req_packets = new ByteArrayOutputStream(buffer.length);
                                     req_packets.write(received_packet, 4, received_packet.length-4);
-                                    System.out.println("RRQResponse: "+RRQ_Response.getLength());
-                                    
+
                                     if(RRQ_Response.getLength() < 516 && blk_num_base==blk_num){
-                                        System.out.println("test");
                                         String[] fileextension = new String[2];
-                                        System.out.println("input: " + input[1]);
                                         fileextension = input[1].split("\\.", 2);
-                                        System.out.println("File extension: " + fileextension[1]);
-                                        String filename = "testfile." + fileextension[1];
+                                        String filename = input[2]+"."+ fileextension[1];
                                         FileOutputStream foutputstream = new FileOutputStream(filename);
-                                        System.out.println("test1");
                                         foutputstream.write(req_packets.toByteArray());
-                                        System.out.println("test2");
                                         foutputstream.close();
 
-                                        System.out.println("test3");
-                                        
-                                        System.out.println("test4");
                                         byte[] ack = new byte[4];
                                         ack[0] = 0;
                                         ack[1] = 4;
                                         ack[2] = (byte) ((blk_num >> 8) & 0xFF);
                                         ack[3] = (byte) (blk_num & 0xFF);
-                                        System.out.println("test5");
                                         DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
-                                        System.out.println("test6");
                                         client_socket.send(ack_packet);
 
                                         System.out.println("File Transfer Done !");
@@ -157,8 +145,6 @@ public class TFTP_Client {
                                         break;
                                     }
                                     else if(blk_num_base==blk_num){
-                                        System.out.println("else bracket");
-                                        
 
                                         byte[] ack = new byte[4];
                                         ack[0] = 0;
@@ -193,7 +179,7 @@ public class TFTP_Client {
                     }
                 }
 
-                else if(input[0].equals("/write") && input[1]!=null){
+                else if(input[0].equals("/write") && input[1]!=null && input[2]!=null){
                     if(isConnected){
                         int len = wrq_opcode.length+input[1].length()+"octet".length()+2;
                         ByteArrayOutputStream req_output = new ByteArrayOutputStream(len);
@@ -223,20 +209,23 @@ public class TFTP_Client {
                                 file_output.write(blk_num++);
                                 file_output.write(buffer, 0, file_len);
 
-                                DatagramPacket file_packet = new DatagramPacket(file_output.toByteArray(), file_output.toByteArray().length, server_ip, tftp_port);
+                                DatagramPacket file_packet = new DatagramPacket(file_output.toByteArray(), file_output.toByteArray().length, server_ip, client_socket.getPort());
                                 client_socket.send(file_packet);
                                 System.out.println("Sending File...");
 
                                 byte[] ack_data = new byte[4];
-                                DatagramPacket ack_packet = new DatagramPacket(ack_data, ack_data.length, server_ip, tftp_port);
+                                DatagramPacket ack_packet = new DatagramPacket(ack_data, ack_data.length, server_ip, client_socket.getLocalPort());
                                 client_socket.receive(ack_packet);
                                 System.out.println("File Sent!");
-
                             }
+                            file_reader.close();
                         } catch(Exception e) {
                             e.printStackTrace();
                         }
 
+                    }
+                    else{
+                        System.out.println("Connect to the server first");
                     }
                 }
                 else if(input[0].equals("/?")){
@@ -244,7 +233,7 @@ public class TFTP_Client {
                                         "/? - Lists all usable commands\n"+
                                         "/connect [ip address] - Connects to an IP Address\n"+
                                         "/disconnect - Disconnect from an IP Address\n"+
-                                        "/read [filename] - Reads a file from the server\n"+
+                                        "/read [filename] [alias] - Reads a file from the server\n"+
                                         "/write [filename] - Writes a file to the server\n"+
                                         "/exit - Exit the program");
                 }

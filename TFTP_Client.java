@@ -129,8 +129,8 @@ public class TFTP_Client {
                                         System.out.println("File Transfer Done !");
                                     }
 
-                                    int blk_num = ((received_packet[2] & 0xff) << 8) | (received_packet[3] & 0xff);
-                                    ByteArrayOutputStream ack_output = new ByteArrayOutputStream();
+                                    byte[] blk_num = {received_packet[2],received_packet[3]};
+                                    ByteArrayOutputStream ack_output = new ByteArrayOutputStream(ack_opcode.length+ blk_num.length);
                                     ack_output.write(ack_opcode);
                                     ack_output.write(blk_num);
 

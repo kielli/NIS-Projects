@@ -90,6 +90,7 @@ public class TFTP_Client {
 
                         boolean recv_message=true;
                         boolean transfer_done=false;
+                        int blk_num_base = 1;
                         while(!transfer_done){
                             try {
                                 DatagramPacket RRQ_Response = new DatagramPacket(buffer, buffer.length,server_ip, client_socket.getLocalPort());
@@ -99,6 +100,7 @@ public class TFTP_Client {
 
                                 byte[] received_packet = RRQ_Response.getData();
                                 int rcvd_opcode = ((received_packet[0] & 0xff) << 8) | (received_packet[1] & 0xff);
+                                int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
 
                                 if(rcvd_opcode == 5){
                                     int i, j=0;
@@ -122,29 +124,41 @@ public class TFTP_Client {
 
                                     ByteArrayOutputStream req_packets = new ByteArrayOutputStream(buffer.length);
                                     req_packets.write(received_packet, 4, received_packet.length-4);
-
-                                    if(received_packet.length < 516){
-                                        FileOutputStream foutputstream = new FileOutputStream(input[1]);
+                                    System.out.println("RRQResponse: "+RRQ_Response.getLength());
+                                    
+                                    if(RRQ_Response.getLength() < 516 && blk_num_base==blk_num){
+                                        System.out.println("test");
+                                        String[] fileextension = new String[2];
+                                        System.out.println("input: " + input[1]);
+                                        fileextension = input[1].split("\\.", 2);
+                                        System.out.println("File extension: " + fileextension[1]);
+                                        String filename = "testfile." + fileextension[1];
+                                        FileOutputStream foutputstream = new FileOutputStream(filename);
+                                        System.out.println("test1");
                                         foutputstream.write(req_packets.toByteArray());
+                                        System.out.println("test2");
                                         foutputstream.close();
 
-                                        int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
-
+                                        System.out.println("test3");
+                                        
+                                        System.out.println("test4");
                                         byte[] ack = new byte[4];
                                         ack[0] = 0;
                                         ack[1] = 4;
                                         ack[2] = (byte) ((blk_num >> 8) & 0xFF);
                                         ack[3] = (byte) (blk_num & 0xFF);
-
+                                        System.out.println("test5");
                                         DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
+                                        System.out.println("test6");
                                         client_socket.send(ack_packet);
 
                                         System.out.println("File Transfer Done !");
                                         transfer_done=true;
                                         break;
                                     }
-                                    else{
-                                        int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
+                                    else if(blk_num_base==blk_num){
+                                        System.out.println("else bracket");
+                                        
 
                                         byte[] ack = new byte[4];
                                         ack[0] = 0;
@@ -154,13 +168,11 @@ public class TFTP_Client {
 
                                         DatagramPacket ack_packet = new DatagramPacket(ack, ack.length, server_ip, RRQ_Response.getPort());
                                         client_socket.send(ack_packet);
+                                        blk_num_base++;
                                     }
-
                                 }
-
-
                             } catch (SocketTimeoutException e) {
-                                if(retries!=MAX_RETRIES){
+                                if(retries>=MAX_RETRIES){
                                     System.out.println("Server timed out. Retrying...");
                                     retries++;
                                 }

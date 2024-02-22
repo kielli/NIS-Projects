@@ -139,6 +139,7 @@ public class TFTP_Client {
                                         client_socket.send(ack_packet);
 
                                         System.out.println("File Transfer Done !");
+                                        break;
                                     }
                                     else{
                                         int blk_num = ((received_packet[2] & 0xFF) << 8) | (received_packet[3] & 0xFF);
@@ -153,7 +154,6 @@ public class TFTP_Client {
                                         client_socket.send(ack_packet);
                                     }
 
-                                    break;
                                 }
 
 
